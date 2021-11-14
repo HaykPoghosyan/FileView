@@ -129,7 +129,7 @@ int const buff_size = 1024*1024;
 BYTE buff[buff_size] = {0};
 
 
-void openMyFile(LPWSTR fileName) {
+void openMyFile(HWND hWnd, LPWSTR fileName) {
     HANDLE handle;
     handle = CreateFile(fileName, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 
@@ -141,31 +141,12 @@ void openMyFile(LPWSTR fileName) {
     if (ReadFile(handle, buff, 1024*1024, &nRead, NULL) == false) {
         OutputDebugStringW(L"cant read.\n");
     };
-
-    CloseHandle(handle);
-}
-
-void paint(HWND hWnd) {
-    PAINTSTRUCT ps;
     RECT Rect;
     GetClientRect(hWnd, &Rect);
-    InvalidateRect(hWnd, &Rect, false);
-    HDC hdc = BeginPaint(hWnd, &ps);
-
-    int height, width;
-
-    height = Rect.bottom - Rect.top;
-    width = Rect.right - Rect.left;
-    for (int i = 0; i < height; i++) {
-        for (int j = 0; j < width; j++) {
-            if (height * i + j < buff_size) {
-                BYTE a = buff[height * i + j];
-                SetPixel(hdc, j, i, RGB(a, a, a));
-            }
-        }
-    }
+    InvalidateRect(hWnd, &Rect, TRUE);
+    UpdateWindow(hWnd);
+    CloseHandle(handle);
 }
-
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     
@@ -198,8 +179,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 if (GetOpenFileName(&ofn) == TRUE)
                 {
                     MessageBox(hWnd, ofn.lpstrFile, L"Info", MB_OK);
-                    openMyFile(ofn.lpstrFile);
-                    paint(hWnd);
+                    openMyFile(hWnd, ofn.lpstrFile);
                 }
                 break;
             }
@@ -220,7 +200,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_PAINT:
     {
-        paint(hWnd);
+        PAINTSTRUCT ps;
+        RECT Rect;
+        GetClientRect(hWnd, &Rect);
+        InvalidateRect(hWnd, &Rect, false);
+        HDC hdc = BeginPaint(hWnd, &ps);
+
+        int height, width;
+
+        height = Rect.bottom - Rect.top;
+        width = Rect.right - Rect.left;
+        for (int i = 0; i < height; i++) {
+            for (int j = 0; j < width; j++) {
+                if (height * i + j < buff_size) {
+                    BYTE a = buff[height * i + j];
+                    SetPixel(hdc, j, i, RGB(a, a, a));
+                }
+            }
+        }
     }
         break;
     case WM_DESTROY:
